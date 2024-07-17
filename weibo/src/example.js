@@ -1,12 +1,11 @@
 // https://segmentfault.com/a/1190000013910680
-// 项目依赖
 const cheerio = require('cheerio');
 const agent = require('superagent');
 const path = require('path');
 const fs = require('fs');
 
 // 地址数据
-const urls = [{ 
+const urls = [{
     page:1,
     url:"https://www.imooc.com/course/list?c=fe&page=1"
 },{
@@ -31,7 +30,7 @@ let result = [];
  *                ......
  *               ]
  *     }
- *     ......    
+ *     ......
  * ]
  */
 
@@ -56,7 +55,7 @@ function requestGet(urlObj,callback) {
 
          // 执行回调
          callback();
-     
+
      });
 }
 
@@ -83,15 +82,15 @@ function analysis(data){
 }
 
 
-// 实现队列 
-// 本质： 对.then()方法实现累加 
+// 实现队列
+// 本质： 对.then()方法实现累加
 let curPromise = urls.reduce((promise,curl) => {
 
     return promise.then(() => {
         return new Promise(resolve => {
             // 具体的内容
             requestGet(curl,() => {
-                resolve(); 
+                resolve();
             });
         });
     });
@@ -103,5 +102,5 @@ curPromise.then(()=>{
     fs.writeFile('result.json', JSON.stringify(result), function (err) {
         if(err) throw new Error("appendFile failed...");
         console.log("数据写入success...");
-    });    
+    });
 });

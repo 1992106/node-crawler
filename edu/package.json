@@ -1,0 +1,24 @@
+{
+  "name": "edu",
+  "version": "1.0.0",
+  "description": "node-crawler",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node ./src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1992106/node-crawler.git"
+  },
+  "keywords": [
+    "学校爬虫"
+  ],
+  "author": "王会俊",
+  "license": "MIT",
+  "devDependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "superagent": "^9.0.2",
+    "toad-scheduler": "^3.0.1"
+  }
+}
