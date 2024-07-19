@@ -3,6 +3,7 @@ const cheerio = require("cheerio");
 const superagent = require("superagent");
 const { ToadScheduler, SimpleIntervalJob, AsyncTask } = require('toad-scheduler')
 
+// https://edu.gd.gov.cn/xuexiaochaxun/list.do?action=index
 const eduURL = "https://edu.gd.gov.cn/xuexiaochaxun/wbfw_visitor.do";
 const searchURL = eduURL + "?action=addSearch";
 const listURL = eduURL + "?action=addList";
@@ -37,6 +38,7 @@ function getSearch() {
   })
 }
 
+// 获取数据
 function getList(type, area, page = 1) {
   const xxxlb_m = type?.value || type
   const dq_m = area?.value || area
