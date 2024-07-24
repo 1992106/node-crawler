@@ -1,6 +1,7 @@
 const fs = require("fs");
 const cheerio = require("cheerio");
 const superagent = require("superagent");
+const { jsonToSheetXlsx, jsonToMultipleSheetXlsx } = require('./xlsx') 
 const { ToadScheduler, SimpleIntervalJob, AsyncTask } = require('toad-scheduler')
 
 // https://edu.gd.gov.cn/xuexiaochaxun/list.do?action=index
@@ -50,9 +51,9 @@ function getList(type, area, page = 1) {
       }
       const $ = cheerio.load(res.text);
       const list = [];
+      const header = {};
       $("table tbody tr").each(function (index) {
-        if (index !== 0) {
-          const $td = $(this).children();
+        const $td = $(this).children();
           // 学校名称
           const name = $td.eq(0).text()
           // 机构地址
@@ -63,33 +64,36 @@ function getList(type, area, page = 1) {
           const code = $td.eq(3).text()
           // 学校性质
           const nature = $td.eq(4).text()
+        if (index === 0) {
+          Object.assign(header, { name, address, phone, code, nature })
+        } else {
           list.push({ name, address, phone, code, nature });
         }
       });
       const total = $("div[align=center] > select").children().length
-      resolve({ list, total });
+      resolve({ list, header, total });
     });
   });
 }
 
 async function getListByTotal(total, type, area) {
   const data = []
-  // 从第二页开始
-  for (let i = 2; i <= total; i++){
+  for (let i = 1; i <= total; i++){
     const { list } = await getList(type, area, i)
-    data.push(list)
+    data.push(...list)
   }
-  console.log(area.label, total)
+  console.log(area.label, data.length, total)
   return data
 }
 
 async function getListByType(typeList, area) {
-  const result = []
+  const result = { data: [], header: {}, sheet: [] }
   for (const type of typeList) {
-    const { list, total } = await getList(type, area)
-    result.push(list)
+    const { header, total } = await getList(type, area)
+    result.header = header
+    result.sheet.push(type.label)
     const data = await getListByTotal(total, type, area)
-    result.push(...data)
+    result.data.push(data)
   }
   return result
 }
@@ -98,10 +102,10 @@ async function start() {
   try {
     const { typeList, areaList } = await getSearch()
     for (const area of areaList) {
-      const data = await getListByType(typeList, area)
+      const { data } = await getListByType(typeList, area)
       const result = data.flat()
       await fs.writeFileSync(
-        `${__dirname}/${area.label}.json`,
+        `${__dirname}/data/${area.label}.json`,
         JSON.stringify(result),
         "utf-8"
       );
@@ -110,8 +114,50 @@ async function start() {
     console.error(err)
   }
 }
-
 start()
+
+// 生成表格
+async function startXLSX() {
+  try {
+    const { typeList, areaList } = await getSearch()
+    for (const area of areaList) {
+      const { data, header } = await getListByType(typeList, area)
+      const result = data.flat()
+      jsonToSheetXlsx({ 
+        data: result,
+        header,
+        fileName: `${__dirname}/data/${area.label}.xlsx`
+      })
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+// startXLSX()
+
+// 生成多sheet表格
+async function startMultipleXLSX() {
+  try {
+    const { typeList, areaList } = await getSearch()
+    for (const area of areaList) {
+      const { data, header, sheet } = await getListByType(typeList, area)
+      const result = data.map((arr, i) => {
+        return {
+          sheetName: sheet[i],
+          header,
+          data: arr,
+        }
+      })
+      jsonToMultipleSheetXlsx({ 
+        sheetList: result,
+        fileName: `${__dirname}/data/${area.label}.xlsx`
+      })
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+// startMultipleXLSX()
 
 // const scheduler = new ToadScheduler()
 // const task = new AsyncTask(
